@@ -22,7 +22,7 @@ export default function App() {
       }}
     >
       <AntApp>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || undefined}>
           <Routes>
             <Route path="/" element={<Navigate to="/scripts" replace />} />
             <Route
