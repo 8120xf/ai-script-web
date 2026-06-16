@@ -33,7 +33,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         }}
       >
         <div className="app-sider-brand">
-          <div className="app-sider-brand-title">剧本资产平台</div>
+          <div className="app-sider-brand-title">剧本资产平台 - 小飞</div>
           <div className="app-sider-brand-sub">Script Asset System</div>
         </div>
         <Menu
