@@ -27,16 +27,49 @@ export function ScriptStatusBadge({ status }: { status: ScriptStatus }) {
   return <Tag color={config.color}>{config.label}</Tag>;
 }
 
-export function FieldRevisionBadge({ status }: { status: string }) {
-  const map: Record<string, { color: string; label: string }> = {
-    ai_generated: { color: 'blue', label: 'AI 生成' },
-    confirmed: { color: 'green', label: '已确认' },
-    modified: { color: 'orange', label: '人工修改' },
-    pending_review: { color: 'gold', label: '待复核' },
+const FIELD_STATUS_MAP: Record<string, { color: string; label: string; dot: string }> = {
+  ai_generated: { color: 'blue', label: 'AI 生成', dot: '#5c6b7a' },
+  confirmed: { color: 'success', label: '已确认', dot: '#2d5a4a' },
+  modified: { color: 'warning', label: '已修改', dot: '#a67c52' },
+  pending_review: { color: 'gold', label: '存疑', dot: '#8b2942' },
+};
+
+export function FieldRevisionBadge({
+  status,
+  highlighted,
+  variant = 'tag',
+}: {
+  status: string;
+  highlighted?: boolean;
+  variant?: 'tag' | 'editorial';
+}) {
+  const config = FIELD_STATUS_MAP[status] ?? {
+    color: 'default',
+    label: status,
+    dot: '#c4bdb4',
   };
-  const config = map[status] ?? { color: 'default', label: status };
+
+  if (variant === 'editorial') {
+    return (
+      <span className="editorial-field-status">
+        <span
+          className="editorial-field-status-dot"
+          style={{ background: config.dot }}
+        />
+        {config.label}
+      </span>
+    );
+  }
+
   return (
-    <Tag color={config.color} style={{ fontSize: 11 }}>
+    <Tag
+      color={config.color}
+      style={{
+        fontSize: 11,
+        margin: 0,
+        ...(highlighted ? { fontWeight: 600 } : {}),
+      }}
+    >
       {config.label}
     </Tag>
   );
