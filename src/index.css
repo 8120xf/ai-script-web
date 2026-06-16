@@ -1,15 +1,19 @@
+@import './styles/editorial.css';
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-paper-warm);
   -webkit-font-smoothing: antialiased;
 }
 
 .editable-field:hover {
-  background: #f5f5f5;
+  background: var(--color-paper-muted);
   border-radius: 4px;
   padding: 2px 4px;
   margin: -2px -4px;

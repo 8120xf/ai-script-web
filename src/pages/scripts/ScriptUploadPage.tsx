@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import {
-  Form, Input, Select, InputNumber, Upload, Button, Card, Typography,
-  Space, message, Divider,
+  Form, Input, Select, Upload, Button, Divider,
+  message,
 } from 'antd';
-import { InboxOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { InboxOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { UploadFile } from 'antd/es/upload';
+import { useScripts } from '../../context/ScriptContext';
+import { detectFileType } from '../../utils/mock';
+import type { ScriptGenre } from '../../types';
 
-const { Title, Text } = Typography;
 const { Dragger } = Upload;
+
+const ACCEPT = '.txt,.doc,.docx,.pdf';
 
 const GENRE_OPTIONS = [
   { label: '都市言情', value: 'romance' },
@@ -30,35 +34,58 @@ const TIER_OPTIONS = [
 
 export default function ScriptUploadPage() {
   const navigate = useNavigate();
+  const { addScript } = useScripts();
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (_values: Record<string, unknown>) => {
+  const handleSubmit = async (values: Record<string, unknown>) => {
     if (fileList.length === 0) {
-      message.error('请上传剧本 TXT 文件');
+      message.error('请上传剧本文件');
       return;
     }
+    const file = fileList[0];
+    const fileType = detectFileType(file.name);
+    if (!fileType) {
+      message.error('仅支持 TXT、Word（.doc/.docx）、PDF 格式');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
-      message.success('剧本上传成功（Mock）');
-      navigate('/scripts');
+      await new Promise((r) => setTimeout(r, 800));
+      const newId = addScript({
+        title: values.title as string,
+        genre: values.genre as ScriptGenre,
+        tier: values.tier as string | undefined,
+        file_name: file.name,
+        file_type: fileType,
+      });
+      message.success('上传成功');
+      navigate(`/scripts/${newId}/info`);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
-      <Space style={{ marginBottom: 20 }}>
-        <Button icon={<ArrowLeftOutlined />} type="text" onClick={() => navigate('/scripts')} />
-        <Title level={4} style={{ margin: 0 }}>上传新剧本</Title>
-      </Space>
+    <div className="upload-page">
+      <button
+        type="button"
+        className="upload-page-back"
+        onClick={() => navigate('/scripts')}
+      >
+        ← 剧本列表
+      </button>
 
-      <Card>
+      <h1 className="upload-page-title">上传新剧本</h1>
+      <p className="upload-page-sub">
+        填写基础信息并上传文件，系统将自动解析结构
+      </p>
+
+      <div className="upload-form-card">
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Title level={5} style={{ marginTop: 0 }}>基础信息</Title>
+          <h2 className="upload-section-title">基础信息</h2>
 
           <Form.Item
             label="剧本名称"
@@ -68,7 +95,7 @@ export default function ScriptUploadPage() {
             <Input placeholder="例：替嫁甜妻：总裁的秘密" />
           </Form.Item>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <Form.Item
               label="剧本类型"
               name="genre"
@@ -77,65 +104,55 @@ export default function ScriptUploadPage() {
               <Select options={GENRE_OPTIONS} placeholder="选择类型" />
             </Form.Item>
 
-            <Form.Item
-              label="质量等级"
-              name="tier"
-              rules={[{ required: true, message: '请选择等级' }]}
-            >
-              <Select options={TIER_OPTIONS} placeholder="选择等级" />
-            </Form.Item>
-
-            <Form.Item
-              label="总集数"
-              name="total_episodes"
-              rules={[{ required: true, message: '请填写集数' }]}
-            >
-              <InputNumber min={1} max={500} style={{ width: '100%' }} placeholder="80" />
+            <Form.Item label="已有等级（选填）" name="tier">
+              <Select options={TIER_OPTIONS} placeholder="若无则留空" allowClear />
             </Form.Item>
           </div>
 
-          <Divider />
+          <Divider style={{ borderColor: 'var(--color-border-light)' }} />
 
-          <Title level={5}>上传剧本文件</Title>
-          <Text type="secondary" style={{ display: 'block', marginBottom: 12, fontSize: 13 }}>
-            支持标准格式 TXT 文件，包含集数、场次、人物、旁白、动作、对白等字段。
-          </Text>
+          <h2 className="upload-section-title">上传剧本文件</h2>
+          <span className="upload-section-hint">
+            支持 TXT、Word（.doc / .docx）、PDF。系统会提取文本并尽力识别结构，不对内容格式做模板校验。
+          </span>
 
           <Form.Item>
             <Dragger
-              accept=".txt"
+              accept={ACCEPT}
               maxCount={1}
               fileList={fileList}
               beforeUpload={(file) => {
-                if (!file.name.endsWith('.txt')) {
-                  message.error('仅支持 .txt 格式');
+                if (!detectFileType(file.name)) {
+                  message.error('仅支持 TXT、Word、PDF 格式');
                   return Upload.LIST_IGNORE;
                 }
                 setFileList([file]);
                 return false;
               }}
               onRemove={() => setFileList([])}
+              style={{
+                background: 'var(--color-paper-muted)',
+                borderColor: 'var(--color-border)',
+              }}
             >
               <p className="ant-upload-drag-icon">
-                <InboxOutlined />
+                <InboxOutlined style={{ color: 'var(--color-accent)' }} />
               </p>
-              <p className="ant-upload-text">点击或拖拽 TXT 文件到此区域上传</p>
-              <p className="ant-upload-hint">
-                标准格式：【第X集】【场X】 角色：台词 / 旁白：旁白内容
-              </p>
+              <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+              <p className="ant-upload-hint">支持 .txt · .doc / .docx · .pdf</p>
             </Dragger>
           </Form.Item>
 
           <div style={{ textAlign: 'right', marginTop: 8 }}>
-            <Space>
-              <Button onClick={() => navigate('/scripts')}>取消</Button>
-              <Button type="primary" htmlType="submit" loading={submitting}>
-                上传并保存
-              </Button>
-            </Space>
+            <Button onClick={() => navigate('/scripts')} style={{ marginRight: 8 }}>
+              取消
+            </Button>
+            <Button type="primary" htmlType="submit" loading={submitting}>
+              上传并解析
+            </Button>
           </div>
         </Form>
-      </Card>
+      </div>
     </div>
   );
 }
